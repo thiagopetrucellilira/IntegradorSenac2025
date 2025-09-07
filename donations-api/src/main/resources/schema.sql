@@ -1,0 +1,31 @@
+CREATE DATABASE IF NOT EXISTS donations_db;
+USE donations_db;
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    phone VARCHAR(20),
+    role ENUM('DONOR', 'BENEFICIARY', 'ONG') NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS donations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    status ENUM('AVAILABLE', 'MATCHED', 'DELIVERED') DEFAULT 'AVAILABLE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id BIGINT NOT NULL,
+    CONSTRAINT fk_donation_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS matches (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    donation_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    CONSTRAINT fk_match_donation FOREIGN KEY (donation_id) REFERENCES donations(id),
+    CONSTRAINT fk_match_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
