@@ -29,9 +29,6 @@ public class Donation {
     @Column(nullable = false, length = 50)
     private String category;
     
-    @Column(length = 50)
-    private String condition;
-    
     @Column(nullable = false)
     private Integer quantity = 1;
     
@@ -65,6 +62,9 @@ public class Donation {
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "item_condition", length = 50)
+    private String condition;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donor_id", nullable = false)
@@ -138,7 +138,7 @@ public class Donation {
     public void setCategory(String category) {
         this.category = category;
     }
-    
+
     public String getCondition() {
         return condition;
     }
