@@ -1,58 +1,59 @@
-# Plataforma de Doações
+# Frontend
 
-Este é um projeto simples em **HTML + CSS + JavaScript** para gerenciar doações.  
-Ele possui páginas de **Login, Seleção de Perfil e Doações**, com uma estrutura organizada para facilitar evolução futura.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.6.
 
----
+## Development server
 
-## 📂 Estrutura do Projeto
+To start a local development server, run:
 
-```
-plataforma-doacoes/
-├── index.html               # Página de Login
-├── pages/
-│   ├── perfil.html          # Seleção de Perfil
-│   └── doacoes.html         # Gerenciamento de Doações
-├── css/
-│   └── style.css            # Estilos globais
-├── js/
-│   ├── auth.js              # Lógica de autenticação e perfil
-│   └── doacoes.js           # Lógica de doações
-└── README.md                # Documentação do projeto
+```bash
+ng serve
 ```
 
----
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## 🚀 Como rodar localmente
+## Code scaffolding
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/plataforma-doacoes.git
-   cd plataforma-doacoes
-   ```
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
-2. Abra o arquivo `index.html` no navegador.  
-   Não há necessidade de servidor backend para rodar a versão estática.
+```bash
+ng generate component component-name
+```
 
----
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
 
-## 🌐 Publicação no GitHub Pages
+```bash
+ng generate --help
+```
 
-1. Vá até **Settings > Pages** no repositório.  
-2. Configure a branch `main` e a pasta `/ (root)`.  
-3. Acesse em:  
-   ```
-   https://seu-usuario.github.io/plataforma-doacoes/
-   ```
+## Building
 
----
+To build the project run:
 
-## 📌 Próximos Passos
+```bash
+ng build
+```
 
-- Conectar às APIs reais de autenticação e doações
-- Implementar formulários completos de cadastro de usuário e doação
-- Criar integração com banco de dados e backend
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
----
+## Running unit tests
 
-✍️ Desenvolvido como protótipo inicial da **Plataforma de Doações**.
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
