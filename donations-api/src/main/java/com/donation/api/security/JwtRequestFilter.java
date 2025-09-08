@@ -19,25 +19,42 @@ import java.io.IOException;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
+
+
     
     private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
     
+
     @Autowired
     private UserDetailsService userDetailsService;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
-    
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/register") ||
+                path.startsWith("/api/auth/login") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/swagger-ui.html") ||
+                path.startsWith("/h2-console");
+    }
+
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        
+
+        // Se o método shouldNotFilter() retornar 'true', este método será ignorado
+        // (A lógica de bypass anterior foi removida daqui)
+
         final String requestTokenHeader = request.getHeader("Authorization");
-        
+
         String username = null;
         String jwtToken = null;
-        
-        // JWT Token está no formato "Bearer token". Remove Bearer word e pega apenas o Token
+
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
             try {
@@ -55,9 +72,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         } else {
             logger.debug("Token JWT não encontrado ou formato inválido");
         }
-        
-        // Uma vez que temos o token, validamos ele
+
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 
@@ -79,6 +96,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             } catch (Exception e) {
                 logger.error("Erro ao validar usuário: {}", e.getMessage());
+
             }
         }
         

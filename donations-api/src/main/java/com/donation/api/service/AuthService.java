@@ -2,6 +2,7 @@ package com.donation.api.service;
 
 import com.donation.api.dto.*;
 import com.donation.api.entity.User;
+import com.donation.api.entity.enums.UserRole;
 import com.donation.api.repository.UserRepository;
 import com.donation.api.security.JwtUtil;
 import org.modelmapper.ModelMapper;
@@ -15,27 +16,27 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     @Autowired
     private JwtUtil jwtUtil;
-    
+
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private ModelMapper modelMapper;
-    
+
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email já está em uso");
         }
-        
+
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
@@ -46,32 +47,42 @@ public class AuthService {
         user.setState(request.getState());
         user.setZipCode(request.getZipCode());
         user.setBio(request.getBio());
-        
+
+        // Adicionando a lógica para o campo 'role'
+        try {
+            // Verifica se o papel da requisição é válido e o define na entidade User
+            user.setRole(UserRole.valueOf(request.getRole().toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            // Lança uma exceção se o papel enviado não existir na sua enumeração
+            throw new RuntimeException("Papel de usuário inválido.");
+        }
+        // --- FIM DA ALTERAÇÃO CRUCIAL ---
+
         User savedUser = userRepository.save(user);
         return modelMapper.map(savedUser, UserResponse.class);
     }
-    
+
     public JwtResponse login(LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            
+
             User user = (User) authentication.getPrincipal();
             String token = jwtUtil.generateToken(user);
             UserResponse userResponse = modelMapper.map(user, UserResponse.class);
-            
+
             return new JwtResponse(token, userResponse);
-            
+
         } catch (BadCredentialsException e) {
             throw new RuntimeException("Email ou senha inválidos");
         }
     }
-    
+
     public UserResponse getCurrentUser(String email) {
         User user = userRepository.findByEmailAndEnabledTrue(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        
+
         return modelMapper.map(user, UserResponse.class);
     }
 }
