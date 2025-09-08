@@ -101,6 +101,12 @@ export class Dashboard implements OnInit, OnDestroy {
     // Load received requests (for user's donations)
     this.matchService.getReceivedRequests().subscribe({
       next: (requests) => {
+        console.log('Raw API response for received requests:', requests);
+        console.log('Type of received requests:', typeof requests);
+        console.log('Is array:', Array.isArray(requests));
+        if (Array.isArray(requests) && requests.length > 0) {
+          console.log('First received request structure:', requests[0]);
+        }
         this.receivedRequests = requests;
         console.log('Loaded received requests:', requests.length);
         checkComplete();
@@ -114,12 +120,13 @@ export class Dashboard implements OnInit, OnDestroy {
     // Load user's requests (for other donations)
     this.matchService.getMyRequests().subscribe({
       next: (requests) => {
-        this.myRequests = requests;
-        console.log('Loaded my requests:', requests.length);
+        console.log('✅ My requests loaded:', requests?.length || 0, 'items');
+        this.myRequests = requests || [];
         checkComplete();
       },
       error: (error) => {
-        console.error('Error loading my requests:', error);
+        console.error('❌ Error loading my requests:', error);
+        this.myRequests = [];
         checkComplete();
       }
     });
@@ -133,7 +140,7 @@ export class Dashboard implements OnInit, OnDestroy {
   updateMatchStatus(match: Match, status: MatchStatus, notes?: string) {
     const request: UpdateMatchStatusRequest = {
       status,
-      notes
+      donorNotes: notes
     };
 
     this.matchService.updateMatchStatus(match.id!, request).subscribe({
@@ -192,8 +199,8 @@ export class Dashboard implements OnInit, OnDestroy {
   getStatusText(status?: DonationStatus | MatchStatus): string {
     switch (status) {
       case DonationStatus.AVAILABLE: return 'Disponível';
-      case DonationStatus.RESERVED: return 'Em andamento';
-      case DonationStatus.PENDING: return 'Em andamento';
+      case DonationStatus.RESERVED: return 'Reservada';
+      case DonationStatus.PENDING: return 'Pendente';
       case DonationStatus.COMPLETED: return 'Concluída';
       case DonationStatus.EXPIRED: return 'Expirada';
       case DonationStatus.CANCELLED: return 'Cancelada';

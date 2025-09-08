@@ -15,8 +15,14 @@ export interface Match {
   requester?: User;
   message?: string;
   status?: MatchStatus;
-  scheduledDate?: Date;
-  notes?: string;
+  requestedAt?: Date;
+  respondedAt?: Date;
+  completedAt?: Date;
+  pickupDate?: Date;
+  pickupNotes?: string;
+  donorNotes?: string;
+  requesterRating?: number;
+  donorRating?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -29,4 +35,8 @@ export interface MatchRequest {
 export interface UpdateMatchStatusRequest {
   status: MatchStatus;
   notes?: string;
+  pickupDate?: Date;
+  pickupNotes?: string;
+  donorNotes?: string;
+  rating?: number;
 }
