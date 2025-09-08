@@ -1,5 +1,7 @@
 package com.donation.api.entity;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import com.donation.api.entity.enums.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -71,7 +73,9 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "requester", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Match> matches;
 
-
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
 
 
     
@@ -98,7 +102,7 @@ public class User implements UserDetails {
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
     
     @Override
@@ -258,4 +262,8 @@ public class User implements UserDetails {
     public void setMatches(List<Match> matches) {
         this.matches = matches;
     }
+
+    public UserRole getRole() { return role; }
+
+    public void setRole(UserRole role) { this.role = role; }
 }

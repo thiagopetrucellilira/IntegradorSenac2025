@@ -30,18 +30,18 @@ import static org.springframework.security.web.util.matcher.AntPathRequestMatche
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
+
     @Autowired
     private UserDetailsService userDetailsService;
-    
+
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -49,12 +49,12 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
-    
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -62,51 +62,45 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-    
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(authz -> authz
-                // Endpoints públicos - usando antMatcher() para especificar explicitamente
-                .requestMatchers(antMatcher("/api/auth/register")).permitAll()
-                .requestMatchers(antMatcher("/api/auth/login")).permitAll()
-                
-                // Swagger/OpenAPI - usando antMatcher()
-                .requestMatchers(antMatcher("/v3/api-docs/**")).permitAll()
-                .requestMatchers(antMatcher("/swagger-ui/**")).permitAll()
-                .requestMatchers(antMatcher("/swagger-ui.html")).permitAll()
-                .requestMatchers(antMatcher("/api-docs/**")).permitAll()
-                .requestMatchers(antMatcher("/swagger-resources/**")).permitAll()
-                .requestMatchers(antMatcher("/webjars/**")).permitAll()
-                
-                // Console H2 (apenas para desenvolvimento)
-                .requestMatchers(antMatcher("/h2-console/**")).permitAll()
-                
-                // Endpoints de doações - GET público para listagem
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/donations")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/donations/*")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/donations/categories")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/donations/cities")).permitAll()
-                
-                // Todos os outros endpoints requerem autenticação
-                .anyRequest().authenticated()
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-        
-        // Para H2 Console
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authz -> authz
+                        // Endpoints de autenticação - Permite acesso para todos
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // Endpoint para obter perfil sem autenticação JWT
+                        .requestMatchers(HttpMethod.GET, "/api/users/profile").permitAll()
+
+                        // Endpoints de doações - GET é público para listagem
+                        .requestMatchers(HttpMethod.GET, "/api/donations").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/cities").permitAll()
+
+                        // Endpoints do Swagger (documentação)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Todos os outros endpoints exigem autenticação
+                        .anyRequest().authenticated()
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // Para H2 Console, se estiver usando
         http.headers(headers -> headers
-            .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
         );
-        
+
         return http.build();
     }
 }
