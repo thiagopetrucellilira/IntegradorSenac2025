@@ -21,6 +21,7 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
+  role: string; // Adicionando o campo role obrigatório
   phone?: string;
   address?: string;
   city?: string;

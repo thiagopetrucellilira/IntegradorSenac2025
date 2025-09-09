@@ -13,7 +13,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   console.log('Request method:', req.method);
   console.log('Token exists:', !!token);
   
-  if (token) {
+  // Skip adding token for login and register requests
+  const isAuthRequest = req.url.includes('/auth/login') || req.url.includes('/auth/register');
+  
+  if (token && !isAuthRequest) {
     console.log('Token (first 20 chars):', token.substring(0, 20) + '...');
     console.log('Adding auth token to request');
     
@@ -40,6 +43,19 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     );
   }
   
-  console.log('No token found for request');
-  return next(req);
+  if (isAuthRequest) {
+    console.log('Auth request detected - skipping token');
+  } else {
+    console.log('No token found for request');
+  }
+  
+  return next(req).pipe(
+    catchError((error) => {
+      console.error('=== Request Error (No Auth) ===');
+      console.error('Status:', error.status);
+      console.error('Error:', error.error);
+      console.error('URL:', req.url);
+      return throwError(() => error);
+    })
+  );
 };

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap, catchError, throwError } from 'rxjs';
 import { LoginRequest, RegisterRequest, JwtResponse, User } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
@@ -22,12 +22,26 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<JwtResponse> {
+    console.log('=== Auth Service Login ===');
+    console.log('Credentials:', credentials);
+    console.log('API URL:', `${this.API_URL}/login`);
+    
     return this.http.post<JwtResponse>(`${this.API_URL}/login`, credentials)
       .pipe(
         tap(response => {
+          console.log('=== Login Success ===');
+          console.log('Response:', response);
           localStorage.setItem('token', response.token);
           localStorage.setItem('user', JSON.stringify(response.user));
           this.currentUserSubject.next(response.user);
+        }),
+        catchError((error: any) => {
+          console.error('=== Login Error ===');
+          console.error('Status:', error.status);
+          console.error('Status Text:', error.statusText);
+          console.error('Error Details:', error.error);
+          console.error('Full Error:', error);
+          throw error;
         })
       );
   }
