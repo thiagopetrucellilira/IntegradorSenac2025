@@ -6,13 +6,13 @@ import com.donation.api.dto.UserResponse;
 import com.donation.api.entity.Donation;
 import com.donation.api.entity.User;
 import com.donation.api.repository.DonationRepository;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,9 +26,7 @@ public class DonationService {
     @Autowired
     private UserService userService;
     
-    @Autowired
-    private ModelMapper modelMapper;
-    
+    @Transactional(readOnly = true)
     public Page<DonationResponse> getAllDonations(
             String category, 
             String city, 
@@ -74,6 +72,7 @@ public class DonationService {
         return convertToResponse(savedDonation);
     }
     
+    @Transactional(readOnly = true)
     public DonationResponse getDonationById(Long id) {
         Donation donation = donationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Doação não encontrada"));
@@ -132,13 +131,43 @@ public class DonationService {
         donationRepository.delete(donation);
     }
     
+    @Transactional(readOnly = true)
     public List<DonationResponse> getUserDonations(String userEmail) {
-        User user = userService.findByEmail(userEmail);
-        List<Donation> donations = donationRepository.findByDonor(user);
-        
-        return donations.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        try {
+            System.out.println("=== getUserDonations ===");
+            System.out.println("User email: " + userEmail);
+            
+            User user = userService.findByEmail(userEmail);
+            System.out.println("User found: " + user.getId() + " - " + user.getName());
+            
+            List<Donation> donations = donationRepository.findByDonorWithUser(user);
+            System.out.println("Found " + donations.size() + " donations for user");
+            
+            if (!donations.isEmpty()) {
+                System.out.println("First donation details:");
+                Donation firstDonation = donations.get(0);
+                System.out.println("- ID: " + firstDonation.getId());
+                System.out.println("- Title: " + firstDonation.getTitle());
+                System.out.println("- Donor: " + (firstDonation.getDonor() != null ? firstDonation.getDonor().getName() : "null"));
+                System.out.println("- Matches count: " + (firstDonation.getMatches() != null ? firstDonation.getMatches().size() : "null"));
+            }
+            
+            System.out.println("Starting conversion to DonationResponse...");
+            List<DonationResponse> result = donations.stream()
+                    .map(donation -> {
+                        System.out.println("Converting donation: " + donation.getId());
+                        return this.convertToResponse(donation);
+                    })
+                    .collect(Collectors.toList());
+            
+            System.out.println("Conversion completed successfully. Returning " + result.size() + " responses");
+            return result;
+            
+        } catch (Exception e) {
+            System.err.println("Error in getUserDonations: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao buscar doações do usuário: " + e.getMessage(), e);
+        }
     }
     
     public List<String> getCategories() {
@@ -150,9 +179,44 @@ public class DonationService {
     }
     
     private DonationResponse convertToResponse(Donation donation) {
-        DonationResponse response = modelMapper.map(donation, DonationResponse.class);
-        UserResponse donorResponse = modelMapper.map(donation.getDonor(), UserResponse.class);
-        response.setDonor(donorResponse);
-        return response;
+        try {
+            // Conversão manual para evitar problemas de referência circular
+            DonationResponse response = new DonationResponse();
+            
+            // Campos básicos
+            response.setId(donation.getId());
+            response.setTitle(donation.getTitle());
+            response.setDescription(donation.getDescription());
+            response.setCategory(donation.getCategory());
+            response.setCondition(donation.getCondition());
+            response.setQuantity(donation.getQuantity());
+            response.setLocation(donation.getLocation());
+            response.setCity(donation.getCity());
+            response.setState(donation.getState());
+            response.setZipCode(donation.getZipCode());
+            response.setStatus(donation.getStatus());
+            response.setImageUrls(donation.getImageUrls());
+            response.setPickupInstructions(donation.getPickupInstructions());
+            response.setExpiresAt(donation.getExpiresAt());
+            response.setCreatedAt(donation.getCreatedAt());
+            response.setUpdatedAt(donation.getUpdatedAt());
+            
+            // Converter o donor manualmente (evita problemas de lazy loading)
+            if (donation.getDonor() != null) {
+                UserResponse donorResponse = new UserResponse();
+                donorResponse.setId(donation.getDonor().getId());
+                donorResponse.setName(donation.getDonor().getName());
+                donorResponse.setEmail(donation.getDonor().getEmail());
+                // Não incluir campos sensíveis ou lazy como address, password, etc.
+                response.setDonor(donorResponse);
+            }
+            
+            return response;
+        } catch (Exception e) {
+            // Log do erro para debug
+            System.err.println("Erro na conversão Donation -> DonationResponse: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erro ao converter doação para resposta: " + e.getMessage(), e);
+        }
     }
 }

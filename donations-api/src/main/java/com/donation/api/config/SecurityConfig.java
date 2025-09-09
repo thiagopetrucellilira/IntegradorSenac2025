@@ -78,8 +78,6 @@ public class SecurityConfig {
                         // Endpoints de autenticação - Permite acesso para todos
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        // Endpoint para obter perfil sem autenticação JWT
-                        .requestMatchers(HttpMethod.GET, "/api/users/profile").permitAll()
 
                         // Endpoints de doações - GET é público para listagem
                         .requestMatchers(HttpMethod.GET, "/api/donations").permitAll()

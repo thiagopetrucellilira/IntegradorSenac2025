@@ -3,18 +3,22 @@ package com.donation.api.service;
 import com.donation.api.dto.MatchRequest;
 import com.donation.api.dto.MatchResponse;
 import com.donation.api.dto.UpdateMatchStatusRequest;
+import com.donation.api.dto.UserResponse;
+import com.donation.api.dto.DonationResponse;
 import com.donation.api.entity.Donation;
 import com.donation.api.entity.Match;
 import com.donation.api.entity.User;
 import com.donation.api.repository.DonationRepository;
 import com.donation.api.repository.MatchRepository;
-import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -22,7 +26,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class MatchService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(MatchService.class);
     
     @Autowired
     private MatchRepository matchRepository;
@@ -32,9 +39,6 @@ public class MatchService {
     
     @Autowired
     private UserService userService;
-    
-    @Autowired
-    private ModelMapper modelMapper;
     
     public MatchResponse requestDonation(Long donationId, String requesterEmail, MatchRequest request) {
         User requester = userService.findByEmail(requesterEmail);
@@ -218,12 +222,77 @@ public class MatchService {
     }
     
     private MatchResponse convertToResponse(Match match) {
-        MatchResponse response = modelMapper.map(match, MatchResponse.class);
+        logger.debug("Converting Match to MatchResponse - ID: {}", match.getId());
         
-        // Converter dados da doação e usuários
-        response.setDonation(modelMapper.map(match.getDonation(), com.donation.api.dto.DonationResponse.class));
-        response.setRequester(modelMapper.map(match.getRequester(), com.donation.api.dto.UserResponse.class));
+        MatchResponse response = new MatchResponse();
+        response.setId(match.getId());
+        response.setMessage(match.getMessage());
+        response.setStatus(match.getStatus());
+        response.setRequestedAt(match.getRequestedAt());
+        response.setRespondedAt(match.getRespondedAt());
+        response.setCompletedAt(match.getCompletedAt());
+        response.setPickupDate(match.getPickupDate());
+        response.setPickupNotes(match.getPickupNotes());
+        response.setDonorNotes(match.getDonorNotes());
+        response.setRequesterRating(match.getRequesterRating());
+        response.setDonorRating(match.getDonorRating());
+        response.setCreatedAt(match.getCreatedAt());
         
+        // Conversão manual da doação
+        if (match.getDonation() != null) {
+            Donation donation = match.getDonation();
+            DonationResponse donationResponse = new DonationResponse();
+            donationResponse.setId(donation.getId());
+            donationResponse.setTitle(donation.getTitle());
+            donationResponse.setDescription(donation.getDescription());
+            donationResponse.setCategory(donation.getCategory());
+            donationResponse.setQuantity(donation.getQuantity());
+            donationResponse.setCondition(donation.getCondition());
+            donationResponse.setLocation(donation.getLocation());
+            donationResponse.setCity(donation.getCity());
+            donationResponse.setState(donation.getState());
+            donationResponse.setZipCode(donation.getZipCode());
+            donationResponse.setStatus(donation.getStatus());
+            donationResponse.setCreatedAt(donation.getCreatedAt());
+            donationResponse.setUpdatedAt(donation.getUpdatedAt());
+            donationResponse.setExpiresAt(donation.getExpiresAt());
+            donationResponse.setImageUrls(donation.getImageUrls());
+            donationResponse.setPickupInstructions(donation.getPickupInstructions());
+            
+            // Conversão manual do doador (donor)
+            if (donation.getDonor() != null) {
+                User donor = donation.getDonor();
+                UserResponse donorResponse = new UserResponse();
+                donorResponse.setId(donor.getId());
+                donorResponse.setName(donor.getName());
+                donorResponse.setEmail(donor.getEmail());
+                donorResponse.setPhone(donor.getPhone());
+                donorResponse.setCity(donor.getCity());
+                donorResponse.setState(donor.getState());
+                donorResponse.setZipCode(donor.getZipCode());
+                donorResponse.setCreatedAt(donor.getCreatedAt());
+                donationResponse.setDonor(donorResponse);
+            }
+            
+            response.setDonation(donationResponse);
+        }
+        
+        // Conversão manual do solicitante (requester)
+        if (match.getRequester() != null) {
+            User requester = match.getRequester();
+            UserResponse requesterResponse = new UserResponse();
+            requesterResponse.setId(requester.getId());
+            requesterResponse.setName(requester.getName());
+            requesterResponse.setEmail(requester.getEmail());
+            requesterResponse.setPhone(requester.getPhone());
+            requesterResponse.setCity(requester.getCity());
+            requesterResponse.setState(requester.getState());
+            requesterResponse.setZipCode(requester.getZipCode());
+            requesterResponse.setCreatedAt(requester.getCreatedAt());
+            response.setRequester(requesterResponse);
+        }
+        
+        logger.debug("Successfully converted Match to MatchResponse");
         return response;
     }
 }

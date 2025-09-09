@@ -5,7 +5,6 @@ import com.donation.api.entity.User;
 import com.donation.api.entity.enums.UserRole;
 import com.donation.api.repository.UserRepository;
 import com.donation.api.security.JwtUtil;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,9 +27,6 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private ModelMapper modelMapper;
 
     public UserResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -59,23 +55,46 @@ public class AuthService {
         // --- FIM DA ALTERAÇÃO CRUCIAL ---
 
         User savedUser = userRepository.save(user);
-        return modelMapper.map(savedUser, UserResponse.class);
+        return convertToResponse(savedUser);
     }
 
     public JwtResponse login(LoginRequest request) {
         try {
+            System.out.println("=== AuthService.login() ===");
+            System.out.println("Attempting to authenticate user: " + request.getEmail());
+            System.out.println("Password provided: " + request.getPassword());
+            
+            // Verificar se o usuário existe no banco e sua senha hash
+            User userFromDb = userRepository.findByEmailAndEnabledTrue(request.getEmail()).orElse(null);
+            if (userFromDb != null) {
+                System.out.println("User found in database: " + userFromDb.getEmail());
+                System.out.println("Password hash in database: " + userFromDb.getPassword());
+                System.out.println("Password matches: " + passwordEncoder.matches(request.getPassword(), userFromDb.getPassword()));
+            } else {
+                System.out.println("User not found in database");
+            }
+            
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
 
+            System.out.println("Authentication successful");
             User user = (User) authentication.getPrincipal();
+            System.out.println("User found: " + user.getEmail() + ", enabled: " + user.isEnabled());
+            
             String token = jwtUtil.generateToken(user);
-            UserResponse userResponse = modelMapper.map(user, UserResponse.class);
+            UserResponse userResponse = convertToResponse(user);
 
+            System.out.println("Token generated successfully");
             return new JwtResponse(token, userResponse);
 
         } catch (BadCredentialsException e) {
+            System.out.println("BadCredentialsException: " + e.getMessage());
             throw new RuntimeException("Email ou senha inválidos");
+        } catch (Exception e) {
+            System.out.println("Unexpected error during login: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erro interno durante o login");
         }
     }
 
@@ -83,6 +102,22 @@ public class AuthService {
         User user = userRepository.findByEmailAndEnabledTrue(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return modelMapper.map(user, UserResponse.class);
+        return convertToResponse(user);
+    }
+    
+    private UserResponse convertToResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setAddress(user.getAddress());
+        response.setCity(user.getCity());
+        response.setState(user.getState());
+        response.setZipCode(user.getZipCode());
+        response.setBio(user.getBio());
+        response.setProfileImageUrl(user.getProfileImageUrl());
+        response.setCreatedAt(user.getCreatedAt());
+        return response;
     }
 }

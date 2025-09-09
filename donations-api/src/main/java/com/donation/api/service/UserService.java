@@ -4,7 +4,6 @@ import com.donation.api.dto.UpdateProfileRequest;
 import com.donation.api.dto.UserResponse;
 import com.donation.api.entity.User;
 import com.donation.api.repository.UserRepository;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,14 +13,11 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
     
-    @Autowired
-    private ModelMapper modelMapper;
-    
     public UserResponse getProfile(String email) {
         User user = userRepository.findByEmailAndEnabledTrue(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         
-        return modelMapper.map(user, UserResponse.class);
+        return convertToResponse(user);
     }
     
     public UserResponse updateProfile(String email, UpdateProfileRequest request) {
@@ -62,11 +58,27 @@ public class UserService {
         }
         
         User updatedUser = userRepository.save(user);
-        return modelMapper.map(updatedUser, UserResponse.class);
+        return convertToResponse(updatedUser);
     }
     
     public User findByEmail(String email) {
         return userRepository.findByEmailAndEnabledTrue(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
+    
+    private UserResponse convertToResponse(User user) {
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setName(user.getName());
+        response.setEmail(user.getEmail());
+        response.setPhone(user.getPhone());
+        response.setAddress(user.getAddress());
+        response.setCity(user.getCity());
+        response.setState(user.getState());
+        response.setZipCode(user.getZipCode());
+        response.setBio(user.getBio());
+        response.setProfileImageUrl(user.getProfileImageUrl());
+        response.setCreatedAt(user.getCreatedAt());
+        return response;
     }
 }

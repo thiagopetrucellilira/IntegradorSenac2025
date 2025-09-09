@@ -16,6 +16,9 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
     
     List<Donation> findByDonor(User donor);
     
+    @Query("SELECT d FROM Donation d JOIN FETCH d.donor WHERE d.donor = :donor")
+    List<Donation> findByDonorWithUser(@Param("donor") User donor);
+    
     Page<Donation> findByDonor(User donor, Pageable pageable);
     
     @Query("SELECT d FROM Donation d WHERE " +

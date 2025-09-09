@@ -34,12 +34,17 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/auth/register") ||
+        logger.debug("JwtRequestFilter - Checking path: {}", path);
+        
+        boolean shouldNotFilter = path.startsWith("/api/auth/register") ||
                 path.startsWith("/api/auth/login") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/swagger-ui.html") ||
                 path.startsWith("/h2-console");
+                
+        logger.debug("JwtRequestFilter - Should NOT filter: {}", shouldNotFilter);
+        return shouldNotFilter;
     }
 
 
@@ -47,10 +52,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        // Se o método shouldNotFilter() retornar 'true', este método será ignorado
-        // (A lógica de bypass anterior foi removida daqui)
+        logger.debug("JwtRequestFilter - Processing request: {} {}", request.getMethod(), request.getServletPath());
 
         final String requestTokenHeader = request.getHeader("Authorization");
+        logger.debug("JwtRequestFilter - Authorization header: {}", requestTokenHeader != null ? "Present" : "Not present");
 
         String username = null;
         String jwtToken = null;
@@ -74,7 +79,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 
@@ -96,10 +100,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 }
             } catch (Exception e) {
                 logger.error("Erro ao validar usuário: {}", e.getMessage());
-
             }
         }
         
+        logger.debug("JwtRequestFilter - Continuing filter chain");
         chain.doFilter(request, response);
     }
 }

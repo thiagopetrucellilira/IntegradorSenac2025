@@ -1,8 +1,0 @@
-O banco de dados possui 3 tabelas principais:
-Usuarios com nome, senha, email e função sendo ONG, Doador, e Beneficiado
-
-Doações com descriçao, status, titulo, horario e os ids dos usuarios relacionados
-
-Combinações em que horario, usuarios envolvidos e doação envolvida 
-
-Os cadastros são armazenados e utilizados em pesquisas para poder encontrar o usuario mais adequado no algoritimo utilizado

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     zip_code VARCHAR(10),
     bio TEXT,
     profile_image_url VARCHAR(255),
+    role ENUM('DONOR', 'REQUESTER', 'ADMIN') NOT NULL DEFAULT 'DONOR',
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME(6) NOT NULL,
     updated_at DATETIME(6)
